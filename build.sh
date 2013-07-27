@@ -55,9 +55,7 @@ FFMPEG_FLAGS="--target-os=linux \
   --enable-decoder=h264 \
   --enable-decoder=mjpeg \
   --enable-decoder=mpeg4 \
-  --enable-swscale \
-  --disable-asm \
-  --enable-version3"
+  --enable-swscale"
 
 
 for version in neon armv7 vfp armv6; do
@@ -67,11 +65,11 @@ for version in neon armv7 vfp armv6; do
   case $version in
     neon)
       EXTRA_CFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=softfp -mvectorize-with-neon-quad"
-      EXTRA_LDFLAGS=""
+      EXTRA_LDFLAGS="-Wl,--fix-cortex-a8"
       ;;
     armv7)
       EXTRA_CFLAGS="-march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp"
-      EXTRA_LDFLAGS=""
+      EXTRA_LDFLAGS="-Wl,--fix-cortex-a8"
       ;;
     vfp)
       EXTRA_CFLAGS="-march=armv6 -mfpu=vfp -mfloat-abi=softfp"
