@@ -13,8 +13,8 @@ fi
 DEST=`pwd`/build/ffmpeg && rm -rf $DEST
 SOURCE=`pwd`/ffmpeg
 
-PREBUILT=$NDK/toolchains/arm-linux-androideabi-4.8/prebuilt/darwin-x86_64
-SYSROOT=$NDK/platforms/android-18/arch-arm
+PREBUILT=$NDK/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86_64
+SYSROOT=$NDK/platforms/android-8/arch-arm
 
 export PATH=$PREBUILT/bin:$PATH
 export CC=$PREBUILT/bin/arm-linux-androideabi-gcc
@@ -23,6 +23,7 @@ export AR=$PREBUILT/bin/arm-linux-androideabi-ar
 export RANLIB=$PREBUILT/bin/arm-linux-androideabi-ranlib
 export STRIP=$PREBUILT/bin/arm-linux-androideabi-strip
 
+#CFLAGS=""
 CFLAGS="-O3 -Wall -mthumb -pipe -fpic -fasm \
   -finline-limit=300 -ffast-math \
   -fmodulo-sched -fmodulo-sched-allow-regmoves \
@@ -64,6 +65,8 @@ for version in neon armv7 vfp armv6; do
 
   case $version in
     neon)
+      #EXTRA_CFLAGS="-march=armv7-a -mfpu=neon"
+      #EXTRA_LDFLAGS=""
       EXTRA_CFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=softfp -mvectorize-with-neon-quad"
       EXTRA_LDFLAGS="-Wl,--fix-cortex-a8"
       ;;
@@ -100,11 +103,19 @@ for version in neon armv7 vfp armv6; do
   $AR d libavcodec/libavcodec.a log2_tab.o
   $AR d libavutil/libavutil.a log2_tab.o
   
-  $LD -rpath-link=$SYSROOT/usr/lib -L$SYSROOT/usr/lib \
-   -soname libffmpeg.so -shared -nostdlib -z noexecstack \
-   -Bsymbolic --whole-archive --no-undefined \
-   -o $PREFIX/libffmpeg.so libavcodec/libavcodec.a libavformat/libavformat.a libavutil/libavutil.a libswscale/libswscale.a \
-   -lc -lm -lz -ldl -llog --dynamic-linker=/system/bin/linker $PREBUILT/lib/gcc/arm-linux-androideabi/4.8/libgcc.a  
+  #$LD -rpath-link=$SYSROOT/usr/lib -L$SYSROOT/usr/lib \
+  # -soname libffmpeg.so -shared -nostdlib -z noexecstack \
+  # -Bsymbolic --whole-archive --no-undefined \
+  # -o $PREFIX/libffmpeg.so libavcodec/libavcodec.a libavformat/libavformat.a libavutil/libavutil.a libswscale/libswscale.a \
+  # -lc -lm -lz -ldl -llog --dynamic-linker=/system/bin/linker $PREBUILT/lib/gcc/arm-linux-androideabi/4.6/libgcc.a  
+   
+   
+   
+  rm libavcodec/inverse.o
+  rm libavcodec/log2_tab.o
+  rm libavutil/log2_tab.o
+  $CC -lm -lz -shared --sysroot=$SYSROOT -Wl,--no-undefined -z noexecstack $EXTRA_LDFLAGS compat/strtod.o libavutil/*.o libavutil/arm/*.o libavcodec/*.o libavcodec/arm/*.o libavformat/*.o libswscale/*.o -o $PREFIX/libffmpeg.so
+ 
 
   cp $PREFIX/libffmpeg.so $PREFIX/libffmpeg-debug.so
   $STRIP --strip-unneeded $PREFIX/libffmpeg.so
